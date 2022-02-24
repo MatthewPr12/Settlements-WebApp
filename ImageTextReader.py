@@ -17,3 +17,4 @@ def image_to_text(read_path, save_path):
     with open(save_path, 'w', encoding='utf-8') as file:
         file.write(text)
 
+image_to_text("images/теребовельський/V_1364C_1924_0000-00243.jpeg", "image_texts/extra")

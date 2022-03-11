@@ -75,8 +75,29 @@ def file_reader(path):
                 town['церкви'].append(church)
                 section_info = get_section_info(lines, idx)
                 print(section_info)
+
+                given = given_by(section_info, town)
+                if given:
+                    town['надає'] = given
+
                 data.append(town)
     return data
+
+
+def given_by(section, town):
+    res = {}
+    substrings = {"Банк", "банк", "Спадкоємці", "Конвент",
+                  "Рада", "Наслідники"}
+    for i in set(section):
+        if re.search(r'Надає', i):
+            i = i.split(':')
+            output = any([substr in i[-1] for substr in substrings])
+            if output:
+                res['тип'] = 'організація'
+            else:
+                res['тип'] = 'особа'
+            res['назва'] = i[-1].strip()
+    return res
 
 
 def get_section_info(lines, idx):

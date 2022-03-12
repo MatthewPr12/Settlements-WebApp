@@ -146,6 +146,8 @@ def given_by(section):
             parishioners = get_num_of_parishioners(section, idx)
         elif re.match(r"Дот", i):
             dot = get_dot(section, idx)
+        elif re.match(r"Шк", i):
+            schools = get_schools(section, idx)
 
     return res_giv, res_staff, parishioners, dot
 
@@ -270,6 +272,21 @@ def get_dot(section, idx):
             dot["Дн."] = "Дн."
     return dot
 
+
+def get_schools(section, idx):
+    schools = []
+    united_info = section[idx]
+    idx += 1
+    while idx < len(section) and \
+            not re.match(r"Стар", section[idx]) and \
+            not re.match(r"\d{1,2}\)", section[idx]):
+        united_info += ' ' + section[idx]
+        idx += 1
+    united_info = re.sub(r".*:", '', united_info)
+    united_info_lst = re.split(r",|;", united_info)
+    print(united_info_lst)
+
+    return None
 
 def get_section_info(lines, idx):
     section_info = [lines[idx].strip()]

@@ -76,7 +76,7 @@ def file_reader(path):
                 section_info = get_section_info(lines, idx)
                 # print(section_info)
 
-                given, staff, par, dot, schools = given_by(section_info)
+                given, staff, par, dot, schools, star = given_by(section_info)
                 if given:
                     town['надає'] = given
                 if staff:
@@ -88,6 +88,8 @@ def file_reader(path):
                 if schools:
                     if schools[0]:
                         town['навчальні заклади'] = schools
+                if star:
+                    town['стар.'] = star
                 data.append(town)
     return data
 
@@ -98,6 +100,7 @@ def given_by(section):
     parishioners = []
     dot = {}
     schools = []
+    star = []
     substrings = {"Банк", "банк", "Спадкоємці", "Конвент",
                   "Рада", "Наслідники"}
     for idx, i in enumerate(section):
@@ -152,8 +155,10 @@ def given_by(section):
             dot = get_dot(section, idx)
         elif re.match(r"Шк", i):
             schools = get_schools(section, idx)
+        elif re.match(r"Стар", i):
+            star = get_star(section, idx)
 
-    return res_giv, res_staff, parishioners, dot, schools
+    return res_giv, res_staff, parishioners, dot, schools, star
 
 
 def get_coworkers(section, idx):
@@ -288,7 +293,6 @@ def get_schools(section, idx):
         idx += 1
     united_info = re.sub(r".*:", '', united_info)
     united_info_lst = re.split(r";", united_info)
-    # print(united_info_lst)
     sch = []
     gymn = []
     used_idx = set()
@@ -342,8 +346,30 @@ def get_schools(section, idx):
         schools[0]['гімн.'] = gymn
     if other:
         schools[0]['інше'] = other.strip()
-    print(schools)
     return schools
+
+
+def get_star(section, idx):
+    general = []
+    united_info = section[idx]
+    idx += 1
+    while idx < len(section) and not re.match(r"\d{1,2}\)", section[idx]):
+        united_info += " " + section[idx]
+        idx += 1
+    # print(united_info)
+    pins = re.findall(r"(\w+),?\s(\d+)\sКт", united_info)
+    options = re.split(r"\w+,?\s\d+\sКт", united_info)
+    # print(options)
+    for num, i in enumerate(options):
+        if re.search(r"в місц", i):
+            continue
+        opts = re.findall(r"поч\.|пч\.|тел\.|зал\.|Стар\.", i)
+        if opts:
+            for key in opts:
+                res = {key: pins[num][0], 'відстань': {'km.': pins[num][-1]}}
+                general.append(res)
+    # print(pins)
+    return general
 
 
 def get_section_info(lines, idx):

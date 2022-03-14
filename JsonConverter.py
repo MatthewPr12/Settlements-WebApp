@@ -1,9 +1,18 @@
+"""
+convert and structure .txt file and turn it into .json file
+"""
 import re
+import os
 import json
 from GetLocation import get_location
 
 
 def file_reader(path):
+    """
+    properly read .txt file
+    :param path:
+    :return:
+    """
     data = []
     with open(path, 'r', encoding='utf-8') as text_file:
         common_info = {}
@@ -29,7 +38,8 @@ def file_reader(path):
                     settlement = f"{line_lst[0].split()[1]} {line_lst[0].split()[2]}"
                 location = get_location(settlement)
                 town = common_info.copy()
-                town['населений пункт'] = {'назва': settlement, "location": {"lat": location[0], "lng": location[-1]}}
+                town['населений пункт'] = \
+                    {'назва': settlement, "location": {"lat": location[0], "lng": location[-1]}}
 
                 town['церкви'] = []
                 inside_idx = idx
@@ -39,7 +49,7 @@ def file_reader(path):
                     main_info += lines[inside_idx]
                     inside_idx += 1
                 main_info = re.split(',|\n', main_info)
-                # print(main_info)
+
                 if len(main_info) > 2:
                     if 'ц.' in main_info[1]:
                         main_info[1] = re.sub(r'ц\.', '', main_info[1])
@@ -74,7 +84,6 @@ def file_reader(path):
                     church["Дн."] = "Дн."
                 town['церкви'].append(church)
                 section_info = get_section_info(lines, idx)
-                # print(section_info)
 
                 given, staff, par, dot, schools, star = given_by(section_info)
                 if given:
@@ -95,6 +104,11 @@ def file_reader(path):
 
 
 def given_by(section):
+    """
+    get data from txt file and structure it
+    :param section:
+    :return:
+    """
     res_giv = {}
     res_staff = {}
     parishioners = []
@@ -162,6 +176,12 @@ def given_by(section):
 
 
 def get_coworkers(section, idx):
+    """
+    get data about coworkers
+    :param section:
+    :param idx:
+    :return:
+    """
     coworkers = [{}]
     coworker_info = section[idx]
     if idx + 1 < len(section):
@@ -207,6 +227,12 @@ def get_coworkers(section, idx):
 
 
 def get_num_of_parishioners(section, idx):
+    """
+    get data about parishioners
+    :param section:
+    :param idx:
+    :return:
+    """
     parishioners = []
     united_info = section[idx]
     united_info = re.sub(r"Душ:", '', united_info)
@@ -241,6 +267,12 @@ def get_num_of_parishioners(section, idx):
 
 
 def get_dot(section, idx):
+    """
+    get data about 'дот.'
+    :param section:
+    :param idx:
+    :return:
+    """
     dot = {}
     united_info = section[idx]
     united_info = re.sub(r".*:", "", united_info)
@@ -283,6 +315,12 @@ def get_dot(section, idx):
 
 
 def get_schools(section, idx):
+    """
+    get data about schools
+    :param section:
+    :param idx:
+    :return:
+    """
     schools = [{}]
     united_info = section[idx]
     idx += 1
@@ -301,14 +339,12 @@ def get_schools(section, idx):
             used_idx.add(num)
             form = re.findall(r"(\d+)-([Кк]л)", i)
             element = {'кл.': form[-1][0]}
-            i_lst = i.strip().split(',')
             if re.match(r"(\d+)-([Кк]л)\. \w{3}\.", i.strip()):
                 element['мова'] = re.search(r"[уп]\w{2}\.", i).group(0)
             if not re.search(r"^дві", i.strip()):
                 element['кількість'] = '1'
             if re.search(r"муж\.|дів\.|міш\.|жін\.", i):
                 element['тип'] = re.search(r"муж\.|дів\.|міш\.|жін\.", i).group(0)
-            # print(element)
             sch.append(element)
 
         elif re.match(r"дві (шк\. )?\d*-[Кк]л", i.strip()) and not re.search(r"гімн", i):
@@ -320,7 +356,6 @@ def get_schools(section, idx):
             element['кількість'] = '2'
             if re.search(r"муж\.|дів\.|міш\.|жін\.", i):
                 element['тип'] = re.search(r"муж\.|дів\.|міш\.|жін\.", i).group(0)
-            # print(element)
             sch.append(element)
 
         elif re.match(r"\d*-[Кк]л", i.strip()) and re.search(r"гімн", i):
@@ -333,7 +368,6 @@ def get_schools(section, idx):
                 element['тип'] = re.search(r"муж\.|дів\.|міш\.|жін\.", i).group(0)
             if re.search(r"прив\.|дер\.", i):
                 element['власність'] = re.search(r"прив\.|дер\.", i).group(0)
-            # print(element)
             gymn.append(element)
     other = ''
     for indx, inf in enumerate(united_info_lst):
@@ -350,6 +384,12 @@ def get_schools(section, idx):
 
 
 def get_star(section, idx):
+    """
+    get data about 'стар.'
+    :param section:
+    :param idx:
+    :return:
+    """
     general = []
     united_info = section[idx]
     idx += 1
@@ -373,6 +413,12 @@ def get_star(section, idx):
 
 
 def get_section_info(lines, idx):
+    """
+    separate whole section
+    :param lines:
+    :param idx:
+    :return:
+    """
     section_info = [lines[idx].strip()]
     idx += 1
     while not re.match(r"\d{1,2}\)", lines[idx]) and idx < len(lines) - 1:
@@ -385,8 +431,13 @@ def get_section_info(lines, idx):
 
 
 def main():
-    data = file_reader('/Users/matthewprytula/pythonProject/term2/Settlements-WebApp/data/image_texts/Terebovelskyi.txt')
-    with open('/Users/matthewprytula/pythonProject/term2/Settlements-WebApp/data/JSONresults/Terebovelskyi.json', 'w') as res_file:
+    """
+    main wrapper
+    :return:
+    """
+    dir_name = os.path.dirname(__file__)
+    data = file_reader(os.path.join(dir_name, 'data/image_texts/Terebovelskyi.txt'))
+    with open(os.path.join(dir_name, 'data/JSONresults/Terebovelskyi.json'), 'w', encoding='utf-8') as res_file:
         json.dump(data, res_file, ensure_ascii=False, indent=4)
 
 

@@ -385,8 +385,8 @@ def get_section_info(lines, idx):
 
 
 def main():
-    data = file_reader('/Users/matthewprytula/pythonProject/term2/Settlements-WebApp/image_texts/Myliatynskyi.txt')
-    with open('result.json', 'w') as res_file:
+    data = file_reader('/Users/matthewprytula/pythonProject/term2/Settlements-WebApp/data/image_texts/Terebovelskyi.txt')
+    with open('/Users/matthewprytula/pythonProject/term2/Settlements-WebApp/data/JSONresults/Terebovelskyi.json', 'w') as res_file:
         json.dump(data, res_file, ensure_ascii=False, indent=4)
 
 

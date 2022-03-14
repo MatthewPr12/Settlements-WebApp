@@ -76,7 +76,7 @@ def file_reader(path):
                 section_info = get_section_info(lines, idx)
                 # print(section_info)
 
-                given, staff, par, dot = given_by(section_info)
+                given, staff, par, dot, schools = given_by(section_info)
                 if given:
                     town['надає'] = given
                 if staff:
@@ -85,6 +85,9 @@ def file_reader(path):
                     town['душ'] = par
                 if dot:
                     town['дот.'] = dot
+                if schools:
+                    if schools[0]:
+                        town['навчальні заклади'] = schools
                 data.append(town)
     return data
 
@@ -94,6 +97,7 @@ def given_by(section):
     res_staff = {}
     parishioners = []
     dot = {}
+    schools = []
     substrings = {"Банк", "банк", "Спадкоємці", "Конвент",
                   "Рада", "Наслідники"}
     for idx, i in enumerate(section):
@@ -149,7 +153,7 @@ def given_by(section):
         elif re.match(r"Шк", i):
             schools = get_schools(section, idx)
 
-    return res_giv, res_staff, parishioners, dot
+    return res_giv, res_staff, parishioners, dot, schools
 
 
 def get_coworkers(section, idx):
@@ -274,7 +278,7 @@ def get_dot(section, idx):
 
 
 def get_schools(section, idx):
-    schools = []
+    schools = [{}]
     united_info = section[idx]
     idx += 1
     while idx < len(section) and \
@@ -283,10 +287,64 @@ def get_schools(section, idx):
         united_info += ' ' + section[idx]
         idx += 1
     united_info = re.sub(r".*:", '', united_info)
-    united_info_lst = re.split(r",|;", united_info)
-    print(united_info_lst)
+    united_info_lst = re.split(r";", united_info)
+    # print(united_info_lst)
+    sch = []
+    gymn = []
+    used_idx = set()
+    for num, i in enumerate(united_info_lst):
+        if re.match(r"\d*-[Кк]л", i.strip()) and not re.search(r"гімн", i):
+            used_idx.add(num)
+            form = re.findall(r"(\d+)-([Кк]л)", i)
+            element = {'кл.': form[-1][0]}
+            i_lst = i.strip().split(',')
+            if re.match(r"(\d+)-([Кк]л)\. \w{3}\.", i.strip()):
+                element['мова'] = re.search(r"[уп]\w{2}\.", i).group(0)
+            if not re.search(r"^дві", i.strip()):
+                element['кількість'] = '1'
+            if re.search(r"муж\.|дів\.|міш\.|жін\.", i):
+                element['тип'] = re.search(r"муж\.|дів\.|міш\.|жін\.", i).group(0)
+            # print(element)
+            sch.append(element)
 
-    return None
+        elif re.match(r"дві (шк\. )?\d*-[Кк]л", i.strip()) and not re.search(r"гімн", i):
+            used_idx.add(num)
+            form = re.findall(r"(\d+)-([Кк]л)", i)
+            element = {'кл.': form[-1][0]}
+            if re.match(r"(\d+)-([Кк]л)\. \w{3}\.", i.strip()):
+                element['мова'] = re.search(r"[уп]\w{2}\.", i).group(0)
+            element['кількість'] = '2'
+            if re.search(r"муж\.|дів\.|міш\.|жін\.", i):
+                element['тип'] = re.search(r"муж\.|дів\.|міш\.|жін\.", i).group(0)
+            # print(element)
+            sch.append(element)
+
+        elif re.match(r"\d*-[Кк]л", i.strip()) and re.search(r"гімн", i):
+            used_idx.add(num)
+            form = re.findall(r"(\d+)-([Кк]л)", i)
+            element = {'кл.': form[-1][0]}
+            if re.search(r"пол\.|укр\.", i.strip()):
+                element['мова'] = re.search(r"пол\.|укр\.", i.strip()).group(0)
+            if re.search(r"муж\.|дів\.|міш\.|жін\.", i):
+                element['тип'] = re.search(r"муж\.|дів\.|міш\.|жін\.", i).group(0)
+            if re.search(r"прив\.|дер\.", i):
+                element['власність'] = re.search(r"прив\.|дер\.", i).group(0)
+            # print(element)
+            gymn.append(element)
+    other = ''
+    for indx, inf in enumerate(united_info_lst):
+        if indx not in used_idx:
+            other += " " + united_info_lst[indx]
+
+    if sch:
+        schools[0]['шк.'] = sch
+    if gymn:
+        schools[0]['гімн.'] = gymn
+    if other:
+        schools[0]['інше'] = other.strip()
+    print(schools)
+    return schools
+
 
 def get_section_info(lines, idx):
     section_info = [lines[idx].strip()]
@@ -301,7 +359,7 @@ def get_section_info(lines, idx):
 
 
 def main():
-    data = file_reader('/Users/matthewprytula/pythonProject/term2/Settlements-WebApp/image_texts/Terebovelskyi.txt')
+    data = file_reader('/Users/matthewprytula/pythonProject/term2/Settlements-WebApp/image_texts/Myliatynskyi.txt')
     with open('result.json', 'w') as res_file:
         json.dump(data, res_file, ensure_ascii=False, indent=4)
 
